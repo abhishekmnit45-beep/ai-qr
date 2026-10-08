@@ -52,3 +52,7 @@ Reviews aren't LLM-generated — they're rendered from a fixed pool of 1000 temp
 ## Deploying
 
 Since the database is now a real Postgres instance (not a local file), this deploys cleanly to serverless/edge platforms (Vercel, etc.) as well as traditional servers — just set `DATABASE_URL` and `SESSION_SECRET` in the environment.
+
+## Maintainer
+
+Maintained by [@abhishekmnit45-beep](https://github.com/abhishekmnit45-beep).
