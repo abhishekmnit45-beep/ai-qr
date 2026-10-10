@@ -27,7 +27,11 @@ function LoginForm() {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || "Login failed");
       }
-      const next = searchParams.get("next") || "/";
+      const requested = searchParams.get("next");
+      const next =
+        requested?.startsWith("/") && !requested.startsWith("//")
+          ? requested
+          : "/dashboard";
       router.push(next);
       router.refresh();
     } catch (err) {
@@ -45,7 +49,9 @@ function LoginForm() {
             <Lock className="w-6 h-6" />
           </div>
           <h1 className="text-2xl font-black tracking-tight">Welcome Back</h1>
-          <p className="text-sm text-slate-500 font-medium">Log in to your AI QR System dashboard</p>
+          <p className="text-sm text-slate-500 font-medium">
+            Log in to your AI QR System dashboard
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -77,7 +83,10 @@ function LoginForm() {
 
         <p className="text-center text-sm text-slate-400 font-medium">
           New business?{" "}
-          <Link href="/signup" className="text-purple-600 font-bold hover:underline">
+          <Link
+            href="/signup"
+            className="text-purple-600 font-bold hover:underline"
+          >
             Create an account
           </Link>
         </p>

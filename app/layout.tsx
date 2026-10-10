@@ -1,20 +1,10 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
 export const metadata: Metadata = {
-  title: "AI QR System",
-  description: "Generate SEO-optimized customer reviews with a single QR scan, and manage your customers.",
+  title: "aiqr — Small code. Human connections.",
+  description:
+    "Turn a QR scan into honest customer reviews and meaningful feedback. Manage your business QR experience, customer relationships, and analytics in one workspace.",
 };
 
 export default function RootLayout({
@@ -24,11 +14,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {children}
-      </body>
+      <body className="antialiased">{children}</body>
     </html>
   );
 }

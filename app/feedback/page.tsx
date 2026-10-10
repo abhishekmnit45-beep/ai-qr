@@ -15,8 +15,10 @@ export default function FeedbackPage() {
   const load = async (status: "all" | "new" | "resolved") => {
     setIsLoading(true);
     try {
-      const url = status === "all" ? "/api/feedback" : `/api/feedback?status=${status}`;
+      const url =
+        status === "all" ? "/api/feedback" : `/api/feedback?status=${status}`;
       const res = await fetch(url);
+      if (!res.ok) throw new Error("Could not load feedback");
       const data = await res.json();
       setEntries(Array.isArray(data.feedback) ? data.feedback : []);
     } catch (err) {
@@ -34,16 +36,19 @@ export default function FeedbackPage() {
   const markResolved = async (id: number) => {
     setBusyId(id);
     try {
-      await fetch(`/api/feedback/${id}`, {
+      const res = await fetch(`/api/feedback/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: "resolved" }),
       });
+      if (!res.ok) throw new Error("Could not update feedback");
       if (filter === "new") {
         setEntries((prev) => prev.filter((e) => e.id !== id));
       } else {
         setEntries((prev) =>
-          prev.map((e) => (e.id === id ? { ...e, status: "resolved" as const } : e))
+          prev.map((e) =>
+            e.id === id ? { ...e, status: "resolved" as const } : e,
+          ),
         );
       }
     } catch (err) {
@@ -57,7 +62,8 @@ export default function FeedbackPage() {
   const remove = async (id: number) => {
     setBusyId(id);
     try {
-      await fetch(`/api/feedback/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/feedback/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Could not delete feedback");
       setEntries((prev) => prev.filter((e) => e.id !== id));
     } catch (err) {
       console.error("Failed to delete feedback", err);
@@ -103,7 +109,9 @@ export default function FeedbackPage() {
               key={f}
               onClick={() => setFilter(f)}
               className={`px-5 py-2.5 rounded-xl text-sm font-bold capitalize transition-all ${
-                filter === f ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-900"
+                filter === f
+                  ? "bg-white text-slate-900 shadow-sm"
+                  : "text-slate-500 hover:text-slate-900"
               }`}
             >
               {f}
@@ -120,7 +128,9 @@ export default function FeedbackPage() {
         ) : entries.length === 0 ? (
           <div className="text-center py-24 space-y-4 text-slate-400">
             <Inbox className="w-10 h-10 mx-auto" />
-            <p className="font-medium">No {filter !== "all" ? filter : ""} feedback yet.</p>
+            <p className="font-medium">
+              No {filter !== "all" ? filter : ""} feedback yet.
+            </p>
           </div>
         ) : (
           <div className="space-y-5">
@@ -136,7 +146,9 @@ export default function FeedbackPage() {
                         <Star
                           key={i}
                           className={`w-4 h-4 ${
-                            i < entry.rating ? "text-amber-400 fill-current" : "text-slate-200"
+                            i < entry.rating
+                              ? "text-amber-400 fill-current"
+                              : "text-slate-200"
                           }`}
                         />
                       ))}
@@ -157,13 +169,17 @@ export default function FeedbackPage() {
                 </div>
 
                 {entry.comment && (
-                  <p className="text-slate-800 font-medium leading-relaxed">{entry.comment}</p>
+                  <p className="text-slate-800 font-medium leading-relaxed">
+                    {entry.comment}
+                  </p>
                 )}
 
                 <div className="flex items-center justify-between gap-4 pt-2 border-t border-slate-50">
                   <p className="text-sm text-slate-500 font-bold">
                     {entry.customer_name || entry.customer_phone
-                      ? [entry.customer_name, entry.customer_phone].filter(Boolean).join(" · ")
+                      ? [entry.customer_name, entry.customer_phone]
+                          .filter(Boolean)
+                          .join(" · ")
                       : "Anonymous"}
                   </p>
                   <div className="flex gap-2">

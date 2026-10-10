@@ -43,8 +43,11 @@ export default function CustomersPage() {
   const loadCustomers = async (query?: string) => {
     setIsLoading(true);
     try {
-      const url = query ? `/api/customers?q=${encodeURIComponent(query)}` : "/api/customers";
+      const url = query
+        ? `/api/customers?q=${encodeURIComponent(query)}`
+        : "/api/customers";
       const res = await fetch(url);
+      if (!res.ok) throw new Error("Could not load customers");
       const data = await res.json();
       setCustomers(Array.isArray(data.customers) ? data.customers : []);
     } catch (err) {
@@ -68,14 +71,21 @@ export default function CustomersPage() {
 
   const stats = useMemo(() => {
     const total = customers.length;
-    const totalReviews = customers.reduce((sum, c) => sum + (c.review_count || 0), 0);
+    const totalReviews = customers.reduce(
+      (sum, c) => sum + (c.review_count || 0),
+      0,
+    );
     const repeat = customers.filter((c) => (c.review_count || 0) > 1).length;
     return { total, totalReviews, repeat };
   }, [customers]);
 
   const submitAdd = async () => {
     setError("");
-    if (!addForm.name.trim() && !addForm.phone.trim() && !addForm.email.trim()) {
+    if (
+      !addForm.name.trim() &&
+      !addForm.phone.trim() &&
+      !addForm.email.trim()
+    ) {
       setError("Provide at least a name, phone, or email.");
       return;
     }
@@ -130,7 +140,9 @@ export default function CustomersPage() {
       cancelEdit();
       await loadCustomers(search.trim() || undefined);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update customer");
+      setError(
+        err instanceof Error ? err.message : "Failed to update customer",
+      );
     }
   };
 
@@ -145,17 +157,52 @@ export default function CustomersPage() {
       }
       setCustomers((prev) => prev.filter((c) => c.id !== id));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete customer");
+      setError(
+        err instanceof Error ? err.message : "Failed to delete customer",
+      );
     } finally {
       setDeletingId(null);
     }
+  };
+
+  const exportCustomers = () => {
+    const escapeCell = (value: unknown) => {
+      const text = String(value ?? "");
+      const safe = /^[=+\-@\t\r\n]/.test(text) ? `'${text}` : text;
+      return `"${safe.replaceAll('"', '""')}"`;
+    };
+    const rows = [
+      ["Name", "Phone", "Email", "Notes", "Review count", "Last review"],
+      ...customers.map((c) => [
+        c.name,
+        c.phone,
+        c.email,
+        c.notes,
+        c.review_count,
+        c.last_review_at,
+      ]),
+    ];
+    const csv =
+      "\uFEFF" + rows.map((row) => row.map(escapeCell).join(",")).join("\r\n");
+    const url = URL.createObjectURL(
+      new Blob([csv], { type: "text/csv;charset=utf-8" }),
+    );
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "customers.csv";
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
   const formatDate = (value: string | null) => {
     if (!value) return "—";
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return "—";
-    return date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+    return date.toLocaleDateString(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
   };
 
   return (
@@ -170,7 +217,8 @@ export default function CustomersPage() {
               Customer <span className="text-purple-600">Management.</span>
             </h1>
             <p className="text-xl text-slate-500 font-medium max-w-lg leading-relaxed">
-              Everyone who&apos;s scanned your QR code and left a review, in one place.
+              Everyone who&apos;s scanned your QR code and left a review, in one
+              place.
             </p>
           </div>
           <NavBar />
@@ -182,21 +230,27 @@ export default function CustomersPage() {
               <Users className="w-5 h-5" />
             </div>
             <p className="text-3xl font-black">{stats.total}</p>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Total Customers</p>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+              Total Customers
+            </p>
           </div>
           <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-[0_20px_40px_-16px_rgba(0,0,0,0.06)] space-y-2">
             <div className="w-10 h-10 rounded-2xl bg-blue-100 flex items-center justify-center text-blue-600 mb-2">
               <Star className="w-5 h-5 fill-current" />
             </div>
             <p className="text-3xl font-black">{stats.totalReviews}</p>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Reviews Generated</p>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+              Reviews Generated
+            </p>
           </div>
           <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-[0_20px_40px_-16px_rgba(0,0,0,0.06)] space-y-2">
             <div className="w-10 h-10 rounded-2xl bg-emerald-100 flex items-center justify-center text-emerald-600 mb-2">
               <Repeat className="w-5 h-5" />
             </div>
             <p className="text-3xl font-black">{stats.repeat}</p>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Repeat Customers</p>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+              Repeat Customers
+            </p>
           </div>
         </div>
 
@@ -213,10 +267,21 @@ export default function CustomersPage() {
               />
             </div>
             <button
+              onClick={exportCustomers}
+              disabled={isLoading || customers.length === 0}
+              className="px-5 py-3 rounded-xl border border-slate-200 text-sm font-bold disabled:opacity-40"
+            >
+              Export CSV
+            </button>
+            <button
               onClick={() => setShowAddForm((v) => !v)}
               className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-purple-600 text-white font-bold hover:bg-purple-700 transition-all active:scale-[0.98]"
             >
-              {showAddForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+              {showAddForm ? (
+                <X className="w-4 h-4" />
+              ) : (
+                <Plus className="w-4 h-4" />
+              )}
               {showAddForm ? "Cancel" : "Add Customer"}
             </button>
           </div>
@@ -229,28 +294,36 @@ export default function CustomersPage() {
                 <input
                   type="text"
                   value={addForm.name}
-                  onChange={(e) => setAddForm({ ...addForm, name: e.target.value })}
+                  onChange={(e) =>
+                    setAddForm({ ...addForm, name: e.target.value })
+                  }
                   placeholder="Name"
                   className="bg-white border-2 border-slate-100 rounded-xl px-4 py-3 text-sm font-medium focus:border-purple-200 focus:ring-4 focus:ring-purple-50 outline-none transition-all"
                 />
                 <input
                   type="tel"
                   value={addForm.phone}
-                  onChange={(e) => setAddForm({ ...addForm, phone: e.target.value })}
+                  onChange={(e) =>
+                    setAddForm({ ...addForm, phone: e.target.value })
+                  }
                   placeholder="Phone"
                   className="bg-white border-2 border-slate-100 rounded-xl px-4 py-3 text-sm font-medium focus:border-purple-200 focus:ring-4 focus:ring-purple-50 outline-none transition-all"
                 />
                 <input
                   type="email"
                   value={addForm.email}
-                  onChange={(e) => setAddForm({ ...addForm, email: e.target.value })}
+                  onChange={(e) =>
+                    setAddForm({ ...addForm, email: e.target.value })
+                  }
                   placeholder="Email"
                   className="bg-white border-2 border-slate-100 rounded-xl px-4 py-3 text-sm font-medium focus:border-purple-200 focus:ring-4 focus:ring-purple-50 outline-none transition-all"
                 />
                 <input
                   type="text"
                   value={addForm.notes}
-                  onChange={(e) => setAddForm({ ...addForm, notes: e.target.value })}
+                  onChange={(e) =>
+                    setAddForm({ ...addForm, notes: e.target.value })
+                  }
                   placeholder="Notes"
                   className="bg-white border-2 border-slate-100 rounded-xl px-4 py-3 text-sm font-medium focus:border-purple-200 focus:ring-4 focus:ring-purple-50 outline-none transition-all"
                 />
@@ -273,7 +346,8 @@ export default function CustomersPage() {
               </div>
             ) : customers.length === 0 ? (
               <div className="text-center py-16 text-slate-400 font-medium">
-                No customers yet. They&apos;ll show up here once someone scans your QR code.
+                No customers yet. They&apos;ll show up here once someone scans
+                your QR code.
               </div>
             ) : (
               <table className="w-full text-sm">
@@ -292,36 +366,63 @@ export default function CustomersPage() {
                   {customers.map((customer) => {
                     const isEditing = editingId === customer.id;
                     return (
-                      <tr key={customer.id} className="border-b border-slate-50 last:border-0 align-top">
+                      <tr
+                        key={customer.id}
+                        className="border-b border-slate-50 last:border-0 align-top"
+                      >
                         {isEditing ? (
                           <>
                             <td className="py-3 pr-4">
                               <input
                                 value={editForm.name}
-                                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                                onChange={(e) =>
+                                  setEditForm({
+                                    ...editForm,
+                                    name: e.target.value,
+                                  })
+                                }
                                 className="w-32 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-sm"
                               />
                             </td>
                             <td className="py-3 pr-4">
                               <input
                                 value={editForm.phone}
-                                onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                                onChange={(e) =>
+                                  setEditForm({
+                                    ...editForm,
+                                    phone: e.target.value,
+                                  })
+                                }
                                 className="w-28 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-sm"
                               />
                             </td>
                             <td className="py-3 pr-4">
                               <input
                                 value={editForm.email}
-                                onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                                onChange={(e) =>
+                                  setEditForm({
+                                    ...editForm,
+                                    email: e.target.value,
+                                  })
+                                }
                                 className="w-40 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-sm"
                               />
                             </td>
-                            <td className="py-3 pr-4 font-bold text-slate-400">{customer.review_count}</td>
-                            <td className="py-3 pr-4 text-slate-400">{formatDate(customer.last_review_at)}</td>
+                            <td className="py-3 pr-4 font-bold text-slate-400">
+                              {customer.review_count}
+                            </td>
+                            <td className="py-3 pr-4 text-slate-400">
+                              {formatDate(customer.last_review_at)}
+                            </td>
                             <td className="py-3 pr-4">
                               <input
                                 value={editForm.notes}
-                                onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
+                                onChange={(e) =>
+                                  setEditForm({
+                                    ...editForm,
+                                    notes: e.target.value,
+                                  })
+                                }
                                 className="w-40 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-sm"
                               />
                             </td>
@@ -346,17 +447,28 @@ export default function CustomersPage() {
                           </>
                         ) : (
                           <>
-                            <td className="py-4 pr-4 font-bold text-slate-900">{customer.name || "—"}</td>
-                            <td className="py-4 pr-4 text-slate-600">{customer.phone || "—"}</td>
-                            <td className="py-4 pr-4 text-slate-600">{customer.email || "—"}</td>
+                            <td className="py-4 pr-4 font-bold text-slate-900">
+                              {customer.name || "—"}
+                            </td>
+                            <td className="py-4 pr-4 text-slate-600">
+                              {customer.phone || "—"}
+                            </td>
+                            <td className="py-4 pr-4 text-slate-600">
+                              {customer.email || "—"}
+                            </td>
                             <td className="py-4 pr-4">
                               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-purple-50 text-purple-600 font-bold text-xs">
                                 <Star className="w-3 h-3 fill-current" />
                                 {customer.review_count}
                               </span>
                             </td>
-                            <td className="py-4 pr-4 text-slate-400">{formatDate(customer.last_review_at)}</td>
-                            <td className="py-4 pr-4 text-slate-500 max-w-[200px] truncate" title={customer.notes ?? ""}>
+                            <td className="py-4 pr-4 text-slate-400">
+                              {formatDate(customer.last_review_at)}
+                            </td>
+                            <td
+                              className="py-4 pr-4 text-slate-500 max-w-[200px] truncate"
+                              title={customer.notes ?? ""}
+                            >
                               {customer.notes || "—"}
                             </td>
                             <td className="py-4 pr-4">

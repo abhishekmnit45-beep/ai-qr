@@ -14,7 +14,7 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Schema setup runs automatically on first request (idempotent `CREATE TABLE IF NOT EXISTS` calls) — no separate migration step needed.
+Schema setup runs automatically on first request (idempotent `CREATE TABLE IF NOT EXISTS` calls). To initialize and verify all seven application tables explicitly, run `npm run db:migrate` with Node 22.6+ after configuring `.env.local`. This uses the same schema setup as the application and preserves existing records. The database URL and session secret stay in the ignored `.env.local` file.
 
 Visit `/signup` to create a business account — this generates a unique QR slug (e.g. `/qr/joes-cafe-x7k2`), a review-funnel dashboard, and an owner login for that business. There is no shared/default admin account anymore; every business's data (customers, feedback, analytics, settings) is isolated by `business_id`.
 
@@ -27,11 +27,12 @@ Visit `/signup` to create a business account — this generates a unique QR slug
 ## Pages
 
 - `/signup`, `/login` — create or access a business account
-- `/` — QR code, download/share, business settings, feedback-routing mode, your password
+- `/` — public landing page with an interactive, local-only customer experience demo
+- `/dashboard` — QR color customization, PNG/SVG downloads, native sharing, customer preview, business settings, feedback-routing mode, your password
 - `/qr/[slug]` — the public customer-facing flow (star rating → AI review draft or private feedback)
 - `/analytics` — scan counts, conversion rate, rating distribution, 14-day trend
 - `/feedback` — private feedback inbox for low ratings
-- `/customers` — customer CRM: search, add/edit/delete, review counts
+- `/customers` — customer CRM: search, add/edit/delete, review counts, spreadsheet-safe CSV export
 - `/team` — owner-only: add or remove staff logins
 
 ## Feedback routing modes
@@ -56,3 +57,7 @@ Since the database is now a real Postgres instance (not a local file), this depl
 ## Maintainer
 
 Maintained by [@abhishekmnit45-beep](https://github.com/abhishekmnit45-beep).
+
+## Interface improvements
+
+The public landing page works without a database connection. It includes responsive navigation, a sample rating and editable-review flow, feature explanations, and FAQs. The demo never submits data. Motion honors `prefers-reduced-motion`, and keyboard focus states are provided throughout. Business workflows still require the environment variables above.

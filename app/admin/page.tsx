@@ -217,7 +217,7 @@ export default function AdminPage() {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || "Failed to log in as client");
       }
-      router.push("/");
+      router.push("/dashboard");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to log in as client");

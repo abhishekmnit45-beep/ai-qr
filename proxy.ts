@@ -1,9 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ADMIN_SESSION_COOKIE, SESSION_COOKIE, verifySessionToken } from "@/lib/auth";
+import {
+  ADMIN_SESSION_COOKIE,
+  SESSION_COOKIE,
+  verifySessionToken,
+} from "@/lib/auth";
 
-const PUBLIC_PAGES = ["/login", "/signup"];
+const PUBLIC_PAGES = ["/", "/login", "/signup"];
 const PUBLIC_PAGE_PREFIXES = ["/qr/"];
-const PUBLIC_API_PREFIXES = ["/api/auth/login", "/api/auth/signup", "/api/public/"];
+const PUBLIC_API_PREFIXES = [
+  "/api/auth/login",
+  "/api/auth/signup",
+  "/api/public/",
+];
 
 function isPublic(pathname: string): boolean {
   if (PUBLIC_PAGES.includes(pathname)) return true;
@@ -32,7 +40,8 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  const isAdminRoute = pathname.startsWith("/admin") || pathname.startsWith("/api/admin");
+  const isAdminRoute =
+    pathname.startsWith("/admin") || pathname.startsWith("/api/admin");
   // Reachable by an impersonated owner/staff session (its role isn't
   // platform_admin), so it must not be caught by the admin-role gate below.
   const isExitImpersonation = pathname === "/api/admin/exit-impersonation";
@@ -46,7 +55,7 @@ export async function proxy(request: NextRequest) {
     if (pathname.startsWith("/api")) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
-    return NextResponse.redirect(new URL("/", request.url));
+    return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
   const headers = new Headers(request.headers);

@@ -3,10 +3,18 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { QrCode, Users, BarChart3, MessageSquareWarning, LogOut, UserCog, ShieldAlert } from "lucide-react";
+import {
+  QrCode,
+  Users,
+  BarChart3,
+  MessageSquareWarning,
+  LogOut,
+  UserCog,
+  ShieldAlert,
+} from "lucide-react";
 
 const links = [
-  { href: "/", label: "QR & Settings", icon: QrCode },
+  { href: "/dashboard", label: "QR & Settings", icon: QrCode },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/feedback", label: "Feedback", icon: MessageSquareWarning },
   { href: "/customers", label: "Customers", icon: Users },
@@ -55,6 +63,7 @@ export default function NavBar() {
             return (
               <Link
                 key={href}
+                aria-current={active ? "page" : undefined}
                 href={href}
                 className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${
                   active
